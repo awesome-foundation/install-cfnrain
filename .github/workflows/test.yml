@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The release workflow dispatches this for release-please PRs (see release-please.yml)
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -63,3 +65,13 @@ jobs:
         run: |
           [ "$OUTCOME" = failure ] || { echo "::error::The install passed with a changed archive"; exit 1; }
           if command -v cfnrain; then echo "::error::cfnrain is on the PATH"; exit 1; fi
+
+  # The one check that the main ruleset requires, so the matrix can change without a ruleset change
+  test:
+    name: Test
+    if: always()
+    needs: [install, no-alias, checksum-mismatch]
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
+        run: exit 1
