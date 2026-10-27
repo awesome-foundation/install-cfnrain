@@ -17,17 +17,6 @@ jobs:
       - uses: googleapis/release-please-action@v5
         id: release
 
-      # release-please opens and updates its PR with GITHUB_TOKEN, and events from
-      # that token do not trigger pull_request workflows. GITHUB_TOKEN may trigger
-      # workflow_dispatch, so dispatch the required check on the release branch.
-      # The result attaches to the PR's head commit under the same check name.
-      - name: Run the tests on the release PR
-        if: ${{ steps.release.outputs.prs_created == 'true' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
-        run: gh workflow run test.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
-
       # Workflows use the action as @v1 or @v1.2, so those tags follow the newest release.
       - uses: actions/checkout@v7
         if: ${{ steps.release.outputs.release_created }}
@@ -43,3 +32,18 @@ jobs:
           git tag -fa "$MAJOR" -m "Update $MAJOR tag" "$SHA"
           git tag -fa "$MINOR" -m "Update $MINOR tag" "$SHA"
           git push --force origin "$MAJOR" "$MINOR"
+
+      # release-please opens and updates its PR with GITHUB_TOKEN, and events from
+      # that token do not trigger pull_request workflows. GITHUB_TOKEN may trigger
+      # workflow_dispatch, so dispatch the required check on the release branch.
+      # The result attaches to the PR's head commit under the same check name.
+      # jq, not fromJSON: GitHub evaluated fromJSON of an empty pr output on a
+      # release run and failed the step. This step is last, so it never blocks the tags.
+      - name: Run the tests on the release PR
+        if: ${{ steps.release.outputs.pr != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ steps.release.outputs.pr }}
+        run: |
+          branch=$(jq -r .headBranchName <<< "$PR")
+          gh workflow run test.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"
