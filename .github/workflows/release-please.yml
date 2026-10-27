@@ -18,7 +18,7 @@ jobs:
         id: release
 
       # Workflows use the action as @v1 or @v1.2, so those tags follow the newest release.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: ${{ steps.release.outputs.release_created }}
       - name: Move the major and minor tags
         if: ${{ steps.release.outputs.release_created }}

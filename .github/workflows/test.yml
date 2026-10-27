@@ -20,7 +20,7 @@ jobs:
         runs-on: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
         version: [latest, 1.25.1]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: install
         uses: ./
         with:
@@ -42,7 +42,7 @@ jobs:
     name: No rain alias by default
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./
       - shell: bash
         run: |
@@ -53,7 +53,7 @@ jobs:
     name: Fail on a checksum mismatch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Put the tamper shim first on the PATH
         run: echo "$GITHUB_WORKSPACE/test/tamper" >> "$GITHUB_PATH"
       - id: install
