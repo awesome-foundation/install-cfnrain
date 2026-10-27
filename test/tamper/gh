@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Test shim for the checksum test. It must be first on the PATH. It runs the real gh,
+# then changes the archive that a release download wrote, so the checksum must fail.
+set -euo pipefail
+real=$(PATH="${PATH#*:}" command -v gh)
+"$real" "$@"
+if [ "$1 $2" = "release download" ]; then
+  for f in "$RUNNER_TEMP"/cfnrain-download/cfnrain_*; do
+    echo tampered >> "$f"
+  done
+fi

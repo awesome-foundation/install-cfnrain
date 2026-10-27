@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+
+name: Install cfnrain
+description: Installs cfnrain, the community fork of AWS CloudFormation Rain, and verifies the download
+
+inputs:
+  version:
+    description: The cfnrain version, for example 1.25.2, or latest
+    required: false
+    default: latest
+  rain-alias:
+    description: Also put rain on the PATH, as a copy of cfnrain
+    required: false
+    default: 'false'
+  verify-attestation:
+    description: Verify the build provenance with gh attestation verify
+    required: false
+    default: 'true'
+  token:
+    description: The GitHub token that gh uses to download the release
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  cfnrain-bin:
+    description: Path to the cfnrain binary
+    value: ${{ steps.install.outputs.cfnrain-bin }}
+  version:
+    description: The cfnrain version that the action installed
+    value: ${{ steps.install.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - id: install
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        RAIN_ALIAS: ${{ inputs.rain-alias }}
+        VERIFY_ATTESTATION: ${{ inputs.verify-attestation }}
+        GH_TOKEN: ${{ inputs.token }}
+      run: bash "$GITHUB_ACTION_PATH/install.sh"
+
+branding:
+  icon: cloud
+  color: orange

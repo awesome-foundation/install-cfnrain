@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v5
+        id: release
+
+      # Workflows use the action as @v1 or @v1.2, so those tags follow the newest release.
+      - uses: actions/checkout@v7
+        if: ${{ steps.release.outputs.release_created }}
+      - name: Move the major and minor tags
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          SHA: ${{ steps.release.outputs.sha }}
+          MAJOR: v${{ steps.release.outputs.major }}
+          MINOR: v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
+        run: |
+          git config --local user.email 'actions@github.com'
+          git config --local user.name 'github-actions[bot]'
+          git tag -fa "$MAJOR" -m "Update $MAJOR tag" "$SHA"
+          git tag -fa "$MINOR" -m "Update $MINOR tag" "$SHA"
+          git push --force origin "$MAJOR" "$MINOR"

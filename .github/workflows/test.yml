@@ -1,0 +1,65 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    name: Install (${{ matrix.runs-on }}, ${{ matrix.version }})
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
+        version: [latest, 1.25.1]
+    steps:
+      - uses: actions/checkout@v7
+      - id: install
+        uses: ./
+        with:
+          version: ${{ matrix.version }}
+          rain-alias: true
+      - name: Check the binaries and the outputs
+        shell: bash
+        env:
+          BIN: ${{ steps.install.outputs.cfnrain-bin }}
+          INSTALLED: ${{ steps.install.outputs.version }}
+          WANT: ${{ matrix.version }}
+        run: |
+          cfnrain --version
+          rain --version
+          "$BIN" --version | grep -F "v$INSTALLED"
+          if [ "$WANT" != latest ]; then [ "$INSTALLED" = "$WANT" ]; fi
+
+  no-alias:
+    name: No rain alias by default
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./
+      - shell: bash
+        run: |
+          cfnrain --version
+          if command -v rain; then echo "::error::rain is on the PATH"; exit 1; fi
+
+  checksum-mismatch:
+    name: Fail on a checksum mismatch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Put the tamper shim first on the PATH
+        run: echo "$GITHUB_WORKSPACE/test/tamper" >> "$GITHUB_PATH"
+      - id: install
+        uses: ./
+        continue-on-error: true
+      - name: Make sure that the install failed
+        env:
+          OUTCOME: ${{ steps.install.outcome }}
+        run: |
+          [ "$OUTCOME" = failure ] || { echo "::error::The install passed with a changed archive"; exit 1; }
+          if command -v cfnrain; then echo "::error::cfnrain is on the PATH"; exit 1; fi
